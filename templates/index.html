@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UptimeRobot Monitor Dashboard</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #2d5016 0%, #1e3523 100%);
+            color: #e8f5e9;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: rgba(76, 175, 80, 0.1);
+            border-radius: 10px;
+            border: 1px solid rgba(76, 175, 80, 0.3);
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            color: #66bb6a;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+            margin-bottom: 10px;
+        }
+
+        .header .subtitle {
+            color: #a5d6a7;
+            font-size: 1.1em;
+        }
+
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: rgba(76, 175, 80, 0.15);
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            border: 1px solid rgba(76, 175, 80, 0.3);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(76, 175, 80, 0.3);
+        }
+
+        .stat-card h3 {
+            color: #81c784;
+            margin-bottom: 10px;
+            font-size: 1.2em;
+        }
+
+        .stat-value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #c8e6c9;
+        }
+
+        .monitors-container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .monitor-card {
+            background: rgba(76, 175, 80, 0.1);
+            border: 1px solid rgba(76, 175, 80, 0.3);
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .monitor-card:hover {
+            background: rgba(76, 175, 80, 0.2);
+            transform: translateX(5px);
+        }
+
+        .monitor-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .monitor-name {
+            font-size: 1.5em;
+            color: #a5d6a7;
+            font-weight: bold;
+        }
+
+        .status-badge {
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .status-up {
+            background: #4caf50;
+            color: white;
+        }
+
+        .status-down {
+            background: #f44336;
+            color: white;
+        }
+
+        .status-paused {
+            background: #ff9800;
+            color: white;
+        }
+
+        .status-pending {
+            background: #9e9e9e;
+            color: white;
+        }
+
+        .monitor-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .info-item {
+            background: rgba(76, 175, 80, 0.05);
+            padding: 12px;
+            border-radius: 5px;
+            border-left: 3px solid #66bb6a;
+        }
+
+        .info-label {
+            font-size: 0.85em;
+            color: #a5d6a7;
+            margin-bottom: 5px;
+        }
+
+        .info-value {
+            font-size: 1.1em;
+            color: #e8f5e9;
+            font-weight: bold;
+        }
+
+        .uptime-bar {
+            height: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 5px;
+        }
+
+        .uptime-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4caf50, #66bb6a);
+            transition: width 0.5s ease;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            font-size: 1.2em;
+            color: #81c784;
+        }
+
+        .error {
+            text-align: center;
+            padding: 40px;
+            font-size: 1.2em;
+            color: #ff6b6b;
+            background: rgba(244, 67, 54, 0.1);
+            border-radius: 10px;
+            border: 1px solid rgba(244, 67, 54, 0.3);
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease;
+        }
+
+        .map-container {
+            background: rgba(76, 175, 80, 0.1);
+            border: 1px solid rgba(76, 175, 80, 0.3);
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+
+        .map-container h2 {
+            color: #66bb6a;
+            margin-bottom: 15px;
+            font-size: 1.5em;
+        }
+
+        #monitorMap {
+            height: 400px;
+            width: 100%;
+            border-radius: 8px;
+            background: rgba(76, 175, 80, 0.05);
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🚀 UptimeRobot Dashboard</h1>
+        <p class="subtitle">Real-time Monitor Status & Performance Reports</p>
+    </div>
+
+    <div class="map-container">
+        <h2>📍 Monitoring Server Locations</h2>
+        <div id="monitorMap"></div>
+    </div>
+
+    <div id="stats-container" class="stats-container">
+        <!-- Stats will be populated here -->
+    </div>
+
+    <div id="monitors-container" class="monitors-container">
+        <!-- Monitors will be populated here -->
+    </div>
+
+    <script>
+        let monitoringInterval;
+        let map;
+        
+        // Initialize map
+        function initMap() {
+            map = L.map('monitorMap').setView([20, 0], 2);
+            
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors',
+                maxZoom: 19
+            }).addTo(map);
+        }
+        
+        // Initialize map on page load
+        window.addEventListener('load', initMap);
+
+        function getStatusClass(status) {
+            const statusLower = status.toLowerCase();
+            if (statusLower.includes('up') || statusLower.includes('2')) {
+                return 'status-up';
+            } else if (statusLower.includes('down') || statusLower.includes('8') || statusLower.includes('9')) {
+                return 'status-down';
+            } else if (statusLower.includes('paused')) {
+                return 'status-paused';
+            }
+            return 'status-pending';
+        }
+
+        async function fetchMonitors() {
+            try {
+                const response = await fetch('/api/monitors');
+                const data = await response.json();
+                
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+
+                displayStats(data);
+                displayMonitors(data.monitors);
+            } catch (error) {
+                document.getElementById('monitors-container').innerHTML = 
+                    `<div class="error">Error: ${error.message}</div>`;
+            }
+        }
+
+        function displayStats(data) {
+            const statsContainer = document.getElementById('stats-container');
+            const totalMonitors = data.total;
+            const upMonitors = data.monitors.filter(m => m.status_code === 2).length;
+            const downMonitors = data.monitors.filter(m => m.status_code === 8 || m.status_code === 9).length;
+            
+            statsContainer.innerHTML = `
+                <div class="stat-card fade-in">
+                    <h3>Total Monitors</h3>
+                    <div class="stat-value">${totalMonitors}</div>
+                </div>
+                <div class="stat-card fade-in">
+                    <h3>Monitors UP</h3>
+                    <div class="stat-value" style="color: #4caf50;">${upMonitors}</div>
+                </div>
+                <div class="stat-card fade-in">
+                    <h3>Monitors DOWN</h3>
+                    <div class="stat-value" style="color: #f44336;">${downMonitors}</div>
+                </div>
+                <div class="stat-card fade-in">
+                    <h3>Last Updated</h3>
+                    <div class="stat-value" style="font-size: 0.8em;">${new Date().toLocaleTimeString()}</div>
+                </div>
+            `;
+        }
+
+        function displayMonitors(monitors) {
+            const container = document.getElementById('monitors-container');
+            
+            if (monitors.length === 0) {
+                container.innerHTML = '<div class="loading">No monitors found</div>';
+                return;
+            }
+            
+            // Update map with monitor locations
+            if (map) {
+                map.eachLayer(layer => {
+                    if (layer instanceof L.Marker) {
+                        map.removeLayer(layer);
+                    }
+                });
+                
+                // Add a marker for each monitor (using dummy coordinates for now)
+                const regions = ['United States', 'United Kingdom', 'Germany', 'France', 'Netherlands', 'Japan', 'Singapore', 'Australia', 'Canada', 'Brazil'];
+                monitors.forEach((monitor, index) => {
+                    // Generate a simple coordinate based on location string
+                    const lat = 20 + (index * 0.1);
+                    const lng = -100 + (index * 0.1);
+                    
+                    const color = monitor.status_code === 2 ? '#4caf50' : monitor.status_code === 8 || monitor.status_code === 9 ? '#f44336' : '#ff9800';
+                    
+                    L.circleMarker([lat, lng], {
+                        color: color,
+                        fillColor: color,
+                        fillOpacity: 0.7,
+                        radius: 8
+                    }).addTo(map).bindPopup(`<b>${monitor.name}</b><br>${monitor.location}<br>Status: ${monitor.status}`);
+                });
+            }
+
+            container.innerHTML = monitors.map(monitor => {
+                const statusClass = getStatusClass(monitor.status);
+
+                return `
+                    <div class="monitor-card fade-in">
+                        <div class="monitor-header">
+                            <div class="monitor-name">${monitor.name}</div>
+                            <div class="status-badge ${statusClass}">${monitor.status}</div>
+                        </div>
+                        
+                        <div class="monitor-info">
+                            <div class="info-item">
+                                <div class="info-label">Type</div>
+                                <div class="info-value">${monitor.type}</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">URL</div>
+                                <div class="info-value" style="font-size: 0.9em; word-break: break-all;">${monitor.url}</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">Response Time</div>
+                                <div class="info-value">${monitor.response_time !== 'N/A' ? monitor.response_time + 'ms' : 'N/A'}</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">Monitor Location</div>
+                                <div class="info-value">${monitor.location || 'Unknown'}</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Initial load
+        fetchMonitors();
+        
+        // Auto-refresh every 60 seconds
+        monitoringInterval = setInterval(fetchMonitors, 60000);
+    </script>
+</body>
+</html>
+

@@ -1,0 +1,16 @@
+services:
+  uptimerobot-panel:
+    build: .
+    container_name: uptimerobot-dashboard
+    ports:
+      - "8090:8090"
+    environment:
+      - UPTIMEROBOT_API_KEY=ur2774746-bf6e78635497616ec581d61b
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8090/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
