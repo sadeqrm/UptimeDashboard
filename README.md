@@ -32,7 +32,7 @@ docker build -t uptimerobot-panel .
 
 2. Run the container:
 ```bash
-docker run -d -p 8090:8090 -e UPTIMEROBOT_API_KEY=ur2774746-bf6e78635497616ec581d61b uptimerobot-panel
+docker run -d -p 8090:8090 -e UPTIMEROBOT_API_KEY=ur2774746-bf6e7863549xxxxxxxxx uptimerobot-panel
 ```
 
 ### Manual Installation
