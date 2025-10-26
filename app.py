@@ -13,7 +13,7 @@ cache.init_app(app)
 
 # UptimeRobot API endpoint
 API_URL = "https://api.uptimerobot.com/v2/getMonitors"
-API_KEY = os.getenv('UPTIMEROBOT_API_KEY', 'ur2774746-bf6e78635497616ec581d61b')
+API_KEY = os.getenv('UPTIMEROBOT_API_KEY', 'ur2774746-bf6e7863549xxxxxxxxx')
 
 @cache.cached(timeout=60)
 def get_monitors():
