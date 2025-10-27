@@ -5,7 +5,7 @@ services:
     ports:
       - "8090:8090"
     environment:
-      - UPTIMEROBOT_API_KEY=ur2774746-bf6e78635497616ec581d61b
+      - UPTIMEROBOT_API_KEY=ur2774746-bf6e7863549xxxxxxxxx
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8090/"]
