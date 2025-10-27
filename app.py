@@ -12,8 +12,8 @@ cache = Cache(config={'CACHE_TYPE': 'simple'})
 cache.init_app(app)
 
 # UptimeRobot API endpoint
-API_URL = "https://api.uptimerobot.com/v2/getMonitors"
-API_KEY = os.getenv('UPTIMEROBOT_API_KEY', 'ur2774746-bf6e78635497616ec581d61b')
+API_URL = "https://api.uptimerobot.com/v3/monitors"
+API_KEY = os.getenv('UPTIMEROBOT_API_KEY', 'u2774746-5645a5e11561011c857ecbd5')
 
 @cache.cached(timeout=60)
 def get_monitors():
@@ -25,24 +25,14 @@ def get_monitors():
         try:
             app.logger.info(f"Fetching monitors from UptimeRobot (attempt {attempt + 1}/{max_retries})...")
             
-            # Make API request matching the working curl format
+            # Make API request to new v3 endpoint
             headers = {
-                'Content-Type': 'application/x-www-form-urlencoded',
-                'Cache-Control': 'no-cache'
+                'accept': 'application/json',
+                'authorization': f'Bearer {API_KEY}',
             }
-            
-            # Use longer timeout for API requests
-            # Limit logs to get faster response with many monitors
-            response = requests.post(
+
+            response = requests.get(
                 API_URL,
-                data={
-                    'api_key': API_KEY,
-                    'format': 'json',
-                    'logs': '1',
-                    'logs_limit': '50',
-                    'response_times': '1',
-                    'response_times_limit': '10'
-                },
                 headers=headers,
                 timeout=90
             )
